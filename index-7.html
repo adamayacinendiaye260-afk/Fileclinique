@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FileClinique — Tickets de consultation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F6F8F7;
+    --surface:#FFFFFF;
+    --ink:#1B2421;
+    --muted:#5C6B66;
+    --line:#DCE4E1;
+    --teal:#1F5C54;
+    --teal-dark:#143D38;
+    --amber:#E1932E;
+    --amber-soft:#FBEAD3;
+    --danger:#B4483B;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    line-height:1.5;
+  }
+  h1,h2,h3{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    margin:0;
+  }
+  header.top{
+    background:var(--teal-dark);
+    color:#fff;
+    padding:22px 20px 20px;
+  }
+  header.top .label{
+    font-size:13px;
+    color:#BFE0D8;
+    margin-bottom:4px;
+  }
+  header.top h1{
+    font-size:26px;
+    color:#fff;
+  }
+  #configWarning{
+    background:#FBEAD3;
+    color:#8A5A12;
+    font-size:13px;
+    padding:10px 18px;
+    display:none;
+  }
+  nav.tabs{
+    display:flex;
+    background:var(--surface);
+    border-bottom:1px solid var(--line);
+    position:sticky;
+    top:0;
+    z-index:5;
+  }
+  nav.tabs button{
+    flex:1;
+    padding:14px 8px;
+    border:none;
+    background:none;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:14.5px;
+    color:var(--muted);
+    cursor:pointer;
+    border-bottom:3px solid transparent;
+  }
+  nav.tabs button.active{
+    color:var(--teal-dark);
+    border-bottom-color:var(--amber);
+  }
+  main{
+    max-width:520px;
+    margin:0 auto;
+    padding:20px 18px 60px;
+  }
+  .view{display:none;}
+  .view.active{display:block;}
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px;
+    margin-bottom:16px;
+  }
+  label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    color:var(--muted);
+    margin:14px 0 6px;
+  }
+  label:first-of-type{margin-top:0;}
+  input, select{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    font-family:'Inter',sans-serif;
+    font-size:15px;
+    background:#fff;
+    color:var(--ink);
+  }
+  input:focus, select:focus{
+    outline:none;
+    border-color:var(--teal);
+  }
+  .dept-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-top:6px;
+  }
+  .dept-pill{
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:8px;
+    padding:10px 8px;
+    text-align:center;
+    font-size:13.5px;
+    font-weight:600;
+    cursor:pointer;
+    color:var(--ink);
+  }
+  .dept-pill.selected{
+    border-color:var(--teal);
+    background:#EAF4F1;
+    color:var(--teal-dark);
+  }
+  button.primary{
+    width:100%;
+    margin-top:18px;
+    padding:13px;
+    border:none;
+    border-radius:8px;
+    background:var(--teal);
+    color:#fff;
+    font-weight:700;
+    font-size:15px;
+    cursor:pointer;
+  }
+  button.primary:disabled{
+    background:#A9BDB8;
+    cursor:not-allowed;
+  }
+  .ticket{
+    background:var(--teal-dark);
+    color:#fff;
+    border-radius:10px;
+    padding:22px 20px;
+    position:relative;
+    overflow:hidden;
+  }
+  .ticket::after{
+    content:"";
+    position:absolute;
+    left:0; right:0; bottom:54px;
+    border-top:2px dashed rgba(255,255,255,0.25);
+  }
+  .ticket .num-label{
+    font-size:12px;
+    letter-spacing:0.3px;
+    color:#BFE0D8;
+  }
+  .ticket .num{
+    font-family:'Fraunces',serif;
+    font-size:34px;
+    font-weight:600;
+    margin:2px 0 14px;
+  }
+  .ticket .row{
+    display:flex;
+    justify-content:space-between;
+    font-size:13px;
+    padding-top:14px;
+    color:#DDEDE8;
+  }
+  .ticket .row b{color:#fff;}
+  .muted{color:var(--muted); font-size:13.5px;}
+  .queue-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .queue-item:last-child{border-bottom:none;}
+  .queue-item .who{font-weight:600; font-size:14.5px;}
+  .queue-item .meta{font-size:12.5px; color:var(--muted); margin-top:2px;}
+  .badge{
+    font-size:12px;
+    font-weight:700;
+    padding:4px 9px;
+    border-radius:20px;
+    background:var(--amber-soft);
+    color:#8A5A12;
+  }
+  .badge.current{background:var(--teal); color:#fff;}
+  .empty{
+    color:var(--muted);
+    font-size:13.5px;
+    text-align:center;
+    padding:20px 0;
+  }
+  .toast{
+    background:#EAF4F1;
+    border:1px solid #BFE0D8;
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:13px;
+    color:var(--teal-dark);
+    margin-bottom:10px;
+  }
+  .error{
+    background:#FBEAEA;
+    border:1px solid #E8B8B3;
+    color:var(--danger);
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:13px;
+    margin-bottom:10px;
+  }
+  .section-title{
+    font-size:15px;
+    margin-bottom:10px;
+  }
+  #loginBox p.hint{
+    font-size:12.5px;
+    color:var(--muted);
+    margin-top:12px;
+  }
+  #doctorHeader{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+  }
+  #doctorHeader .who{font-size:14px; font-weight:600;}
+  #doctorHeader button{
+    background:none;
+    border:none;
+    color:var(--teal-dark);
+    font-size:13px;
+    font-weight:600;
+    text-decoration:underline;
+    cursor:pointer;
+    padding:0;
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="label">Prototype — v0.3 (Firebase)</div>
+  <h1>FileClinique</h1>
+</header>
+
+<div id="configWarning">
+  ⚠️ Ce site n'est pas encore connecté à Firebase. Remplace <code>firebaseConfig</code> dans le code par tes propres clés (voir console.firebase.google.com).
+</div>
+
+<nav class="tabs">
+  <button id="tabPatientBtn" class="active" onclick="switchTab('patient')">Prendre un ticket</button>
+  <button id="tabDocteurBtn" onclick="switchTab('docteur')">Espace médecin</button>
+</nav>
+
+<main>
+
+  <!-- PATIENT VIEW -->
+  <div id="patientView" class="view active">
+
+    <div id="ticketResult"></div>
+
+    <div class="card" id="patientForm">
+      <h3 class="section-title">Vos informations</h3>
+      <label>Prénom</label>
+      <input type="text" id="pFirst" placeholder="Ex: Awa">
+      <label>Nom</label>
+      <input type="text" id="pLast" placeholder="Ex: Diop">
+      <label>Numéro de téléphone</label>
+      <input type="tel" id="pPhone" placeholder="Ex: 77 123 45 67">
+
+      <label>Département</label>
+      <div class="dept-grid" id="deptGrid"></div>
+
+      <button class="primary" id="submitBtn" onclick="createTicket()" disabled>Obtenir mon ticket</button>
+    </div>
+  </div>
+
+  <!-- DOCTEUR VIEW -->
+  <div id="docteurView" class="view">
+
+    <!-- Connexion médecin -->
+    <div class="card" id="loginBox">
+      <h3 class="section-title">Connexion médecin</h3>
+      <div id="loginError"></div>
+      <label>Email</label>
+      <input type="email" id="docEmail" placeholder="medecin@fileclinique.sn">
+      <label>Mot de passe</label>
+      <input type="password" id="docPassword" placeholder="••••••••">
+      <button class="primary" onclick="doLogin()">Se connecter</button>
+      <p class="hint">Compte créé côté Firebase Authentication (console). Chaque médecin est relié à un département via un document dans Firestore (recherché par email).</p>
+    </div>
+
+    <!-- Tableau de bord -->
+    <div class="card" id="dashboard" style="display:none;">
+      <div id="doctorHeader">
+        <div class="who" id="doctorWho"></div>
+        <button onclick="doLogout()">Déconnexion</button>
+      </div>
+      <div id="notifyLog"></div>
+      <div id="queueList"></div>
+      <button class="primary" id="nextBtn" onclick="callNext()">Patient suivant</button>
+    </div>
+  </div>
+
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore, collection, addDoc, doc, getDoc, getDocs, query, where,
+    orderBy, onSnapshot, updateDoc, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // ============================================================
+  // 🔧 À REMPLACER : colle ici la config que Firebase t'a donnée
+  // (Paramètres du projet → Vos applications → icône </>)
+  // ============================================================
+  const firebaseConfig = {
+    apiKey: "AIzaSyD1Sm6zshi8qXWjR9iFC-xAhEOPcH_6fqk",
+    authDomain: "fileclinique-97d28.firebaseapp.com",
+    projectId: "fileclinique-97d28",
+    storageBucket: "fileclinique-97d28.firebasestorage.app",
+    messagingSenderId: "62954212555",
+    appId: "1:62954212555:web:166b3a81ec207a93c01f4e"
+  };
+
+  let app, auth, db, firebaseReady = false;
+  try {
+    if (firebaseConfig.apiKey !== "REMPLACE_MOI") {
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+      firebaseReady = true;
+    } else {
+      document.getElementById('configWarning').style.display = 'block';
+    }
+  } catch (e) {
+    console.error("Erreur d'initialisation Firebase :", e);
+    document.getElementById('configWarning').style.display = 'block';
+  }
+
+  const departments = [
+    { id: "generale", name: "Médecine générale" },
+    { id: "pediatrie", name: "Pédiatrie" },
+    { id: "gyneco", name: "Gynécologie" },
+    { id: "dentaire", name: "Dentisterie" },
+  ];
+
+  let selectedDept = null;
+  let unsubscribeQueue = null;
+  let currentWaitingList = [];
+
+  window.switchTab = function(tab){
+    document.getElementById('patientView').classList.toggle('active', tab==='patient');
+    document.getElementById('docteurView').classList.toggle('active', tab==='docteur');
+    document.getElementById('tabPatientBtn').classList.toggle('active', tab==='patient');
+    document.getElementById('tabDocteurBtn').classList.toggle('active', tab==='docteur');
+  }
+
+  function renderDepts(){
+    const grid = document.getElementById('deptGrid');
+    grid.innerHTML = '';
+    departments.forEach(d=>{
+      const el = document.createElement('div');
+      el.className = 'dept-pill' + (selectedDept===d.id ? ' selected' : '');
+      el.textContent = d.name;
+      el.onclick = () => { selectedDept = d.id; renderDepts(); checkFormValid(); };
+      grid.appendChild(el);
+    });
+  }
+
+  function checkFormValid(){
+    const ok = document.getElementById('pFirst').value.trim() &&
+               document.getElementById('pLast').value.trim() &&
+               document.getElementById('pPhone').value.trim() &&
+               selectedDept;
+    document.getElementById('submitBtn').disabled = !ok;
+  }
+  ['pFirst','pLast','pPhone'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', checkFormValid);
+  });
+
+  window.createTicket = async function(){
+    if(!firebaseReady){ alert("Connecte d'abord Firebase (voir le message en haut de page)."); return; }
+    const dept = departments.find(d=>d.id===selectedDept);
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Création du ticket...";
+
+    try {
+      const docRef = await addDoc(collection(db, "tickets"), {
+        deptId: dept.id,
+        first: document.getElementById('pFirst').value.trim(),
+        last: document.getElementById('pLast').value.trim(),
+        phone: document.getElementById('pPhone').value.trim(),
+        status: "attente",
+        createdAt: serverTimestamp()
+      });
+
+      document.getElementById('ticketResult').innerHTML = `
+        <div class="ticket">
+          <div class="num-label">${dept.name.toUpperCase()}</div>
+          <div class="num">Ticket enregistré</div>
+          <div class="row"><span>Référence</span><b>${docRef.id.slice(0,6).toUpperCase()}</b></div>
+          <div class="row"><span>Statut</span><b>En attente</b></div>
+        </div>
+      `;
+
+      document.getElementById('pFirst').value = '';
+      document.getElementById('pLast').value = '';
+      document.getElementById('pPhone').value = '';
+      selectedDept = null;
+      renderDepts();
+    } catch(e) {
+      console.error(e);
+      document.getElementById('ticketResult').innerHTML =
+        `<div class="error">Erreur : impossible de créer le ticket. (${e.message})</div>`;
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Obtenir mon ticket";
+      checkFormValid();
+    }
+  }
+
+  window.doLogin = async function(){
+    if(!firebaseReady){ alert("Connecte d'abord Firebase (voir le message en haut de page)."); return; }
+    const email = document.getElementById('docEmail').value.trim();
+    const password = document.getElementById('docPassword').value;
+    const errBox = document.getElementById('loginError');
+    errBox.innerHTML = '';
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch(e) {
+      errBox.innerHTML = `<div class="error">Email ou mot de passe incorrect.</div>`;
+    }
+  }
+
+  window.doLogout = async function(){
+    if (unsubscribeQueue) unsubscribeQueue();
+    await signOut(auth);
+  }
+
+  if (firebaseReady) {
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // On cherche le médecin par email plutôt que par UID —
+        // plus simple à configurer à la main dans Firestore.
+        const q = query(collection(db, "doctors"), where("email", "==", user.email));
+        const querySnap = await getDocs(q);
+        const docSnap = querySnap.empty ? null : querySnap.docs[0];
+
+        if (!docSnap) {
+          document.getElementById('loginError').innerHTML =
+            `<div class="error">Ce compte (${user.email}) n'est relié à aucun département. Ajoute un document dans Firestore (collection "doctors") avec le champ email = ${user.email}.</div>`;
+          await signOut(auth);
+          return;
+        }
+        const info = docSnap.data();
+
+        document.getElementById('loginBox').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        document.getElementById('doctorWho').textContent =
+          `${info.name || user.email} — ${departments.find(d=>d.id===info.deptId)?.name || info.deptId}`;
+
+        listenToQueue(info.deptId);
+      } else {
+        document.getElementById('loginBox').style.display = 'block';
+        document.getElementById('dashboard').style.display = 'none';
+        if (unsubscribeQueue) unsubscribeQueue();
+      }
+    });
+  }
+
+  function listenToQueue(deptId){
+    const q = query(
+      collection(db, "tickets"),
+      where("deptId", "==", deptId),
+      where("status", "in", ["attente", "prevenu"]),
+      orderBy("createdAt", "asc")
+    );
+    unsubscribeQueue = onSnapshot(q, (snap) => {
+      currentWaitingList = [];
+      snap.forEach(d => currentWaitingList.push({ id: d.id, ...d.data() }));
+      renderQueue();
+    });
+  }
+
+  function renderQueue(){
+    const list = document.getElementById('queueList');
+    const nextBtn = document.getElementById('nextBtn');
+    if(currentWaitingList.length === 0){
+      list.innerHTML = '<div class="empty">Aucun patient en attente pour le moment.</div>';
+      nextBtn.disabled = true;
+      return;
+    }
+    nextBtn.disabled = false;
+    list.innerHTML = currentWaitingList.map((t,i)=>`
+      <div class="queue-item">
+        <div>
+          <div class="who">${t.first} ${t.last}</div>
+          <div class="meta">${t.phone} · réf. ${t.id.slice(0,6).toUpperCase()}</div>
+        </div>
+        <span class="badge ${i===0 ? 'current' : ''}">${i===0 ? 'En cours' : (t.status==='prevenu' ? 'Prévenu' : 'En attente')}</span>
+      </div>
+    `).join('');
+  }
+
+  window.callNext = async function(){
+    if(currentWaitingList.length === 0) return;
+    const log = document.getElementById('notifyLog');
+    try {
+      await updateDoc(doc(db, "tickets", currentWaitingList[0].id), { status: "termine" });
+
+      if (currentWaitingList.length > 1) {
+        const next = currentWaitingList[1];
+        await updateDoc(doc(db, "tickets", next.id), { status: "prevenu" });
+        log.innerHTML = `<div class="toast">📲 ${next.first} ${next.last} sera notifié(e) : consultation dans environ 45 min.</div>`;
+      } else {
+        log.innerHTML = '';
+      }
+    } catch(e) {
+      log.innerHTML = `<div class="error">Erreur : ${e.message}</div>`;
+    }
+  }
+
+  renderDepts();
+</script>
+
+</body>
+</html>

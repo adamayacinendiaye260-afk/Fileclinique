@@ -6,7 +6,31 @@
 <title>FileClinique — Tickets de consultation</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
+<style><script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } 
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+  const firebaseConfig = {
+    // ⚠️ Réutilise ici EXACTEMENT le même firebaseConfig que celui
+    // que tu utilises déjà pour Firestore (apiKey, projectId, etc.)
+    // Ne crée pas un deuxième bloc de config différent.
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  window.loginMedecin = function(email, password) {
+    signInWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        alert("Connexion réussie !");
+        window.location.href = "dashboard.html"; // remplace par ta page médecin
+      })
+      .catch((error) => {
+        alert("Erreur : " + error.message);
+      });
+  }
+</script>
   :root{
     --bg:#F6F8F7;
     --surface:#FFFFFF;
@@ -25,7 +49,11 @@
     background:var(--bg);
     color:var(--ink);
     font-family:'Inter',sans-serif;
-    line-height:1.5;
+    line-height:1.5;<form onsubmit="event.preventDefault(); loginMedecin(document.getElementById('email').value, document.getElementById('password').value);">
+  <input type="email" id="email" placeholder="Email" required>
+  <input type="password" id="password" placeholder="Mot de passe" required>
+  <button type="submit">Se connecter</button>
+</form
   }
   h1,h2,h3{
     font-family:'Fraunces',serif;
